@@ -6,6 +6,14 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
+
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/mohammadraufzahed/golang-crypto-price/internal/influxdb"
+)
+
+var (
+	priceService PriceService
 )
 
 type TickerPrice struct {
@@ -41,5 +49,21 @@ func (p *PriceService) GetPrices() []TickerPrice {
 	}
 
 	return prices
+}
 
+func (p *PriceService) SyncPrices(prices []TickerPrice) {
+	influxdb := influxdb.Get()
+	for _, price := range prices {
+		tags := map[string]string{"symbol": price.Symbol}
+		fields := map[string]interface{}{"price": price.Price}
+
+		p := influxdb2.NewPoint("price", tags, fields, time.Now())
+		influxdb.WriteAPI.WritePoint(p)
+	}
+
+	influxdb.WriteAPI.Flush()
+}
+
+func initServices() {
+	priceService = PriceService{}
 }

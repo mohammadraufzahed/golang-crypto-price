@@ -19,7 +19,7 @@ var (
 	once     sync.Once
 )
 
-func initialize() {
+func Initialize() {
 	config := config.Get()
 	once.Do(func() {
 		client := influxdb2.NewClient(config.InfluxDB.Url, config.InfluxDB.Token)
@@ -34,9 +34,17 @@ func initialize() {
 	})
 }
 
+func Close() {
+	if instance == nil {
+		panic("Influxdb is not initialized")
+	}
+
+	instance.Client.Close()
+}
+
 func Get() *influxDB {
 	if instance == nil {
-		initialize()
+		panic("Influxdb is not initialized")
 	}
 	return instance
 }
